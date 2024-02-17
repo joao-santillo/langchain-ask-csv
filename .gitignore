@@ -162,3 +162,5 @@ cython_debug/
 
 #private_files
 *.csv
+*.xlsx
+chroma_db/
