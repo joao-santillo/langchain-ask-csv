@@ -9,10 +9,10 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document 
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser, CommaSeparatedListOutputParser
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
+from langchain.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain_openai import ChatOpenAI
 
 class PreProcessing:
@@ -38,7 +38,7 @@ class PreProcessing:
         st.header(header)
 
     def start_llm(self):
-        llm = ChatOpenAI(model="gpt-4-turbo-preview")
+        llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.8)
         return llm
 
     def load_context(_self, _url):
@@ -83,7 +83,7 @@ def main():
                                     Informar a quantidade média de caracteres de uma linha do DexPara 
                                     é suficiente para esse parâmetro''')
     
-    docs = pp.load_context("files\Planilha_DexPara_Bravo.xlsx")
+    docs = pp.load_context("planilha-de-x-para.xlsx")
     documents = pp.split_context(docs,chunk_size)
     vectorstore = pp.embed_context(documents)
 
@@ -111,7 +111,14 @@ def main():
         Forneça apenas a tabela, não gere texto adicional.
     '''
 
-    prompt = ChatPromptTemplate.from_template(template)
+    #prompt = ChatPromptTemplate.from_template(template)
+
+    prompt = ChatPromptTemplate.from_messages([
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("user", "{input}"),
+        ("user", "Considerando a conversa acima, gere uma busca para procurar informações relevantes para a conversa")
+    ])
+
     document_chain = create_stuff_documents_chain(llm, prompt)
    
     # Creating retrieval chain:
